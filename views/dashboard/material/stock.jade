@@ -1,0 +1,111 @@
+extends ./layout
+block page-header
+  .page-heading
+    h1 #{__('Material')} #{__('Stock')}
+    ol.breadcrumb
+      li
+        a(href='/dashboard') #{__('Home')}
+      li
+        a(href='javascript:void(0);') #{__('Material')} #{__('Stock')}
+block page-body
+  .panel.panel-default.panel-material
+    .panel-body
+      h4 #{__('Material')} #{__('List')}
+      table.table.table-bordered.table-striped.table-hover.material-table.dataTable
+        thead
+        tbody
+block script2
+  script.
+    //Left Menu
+    $('.m-material-status').addClass('active');
+
+    var size = (!{JSON.stringify(size)});
+    var submaterial = (!{JSON.stringify(submaterial)});
+    $('.search-form').submit(function(e){
+      e.preventDefault();
+      var startdate = $('.in-date').val().split('-')[0];
+      var enddate = $('.in-date').val().split('-')[1];
+
+      $.ajax({
+        url: '/dashboard/material/stock/search',
+        type: 'POST',
+        data: {
+          buyer: $('.buyer').val(),
+          startdate: startdate,
+          enddate: enddate,
+          material_type: $('.material-type').val(),
+          material: $('.material').val(),
+          color: $('.color').val(),
+          po: $('.po').val(),
+          style: $('.style').val()
+        },
+        success: function(result){
+          if(result.isSuccess){
+            if($.fn.DataTable.isDataTable('.material-table'))
+              $('.material-table').DataTable().destroy();
+              
+            var headhtml = '<tr>';
+            headhtml += '<th>Style</th>';
+            headhtml += '<th>PO</th>';
+            headhtml += '<th>Material Type</th>';
+            headhtml += '<th>Material</th>';
+            
+            var list = result.list;
+            if(list.length == 0){
+              $('.panel-material').hide();
+              return;
+            }else{
+              $('.panel-material').show();
+            }
+            var headers = [];            
+
+            for(var i = 0; i < size.length; i++){
+              for(var j = 0; j < list.length; j++){
+                if(list[j][size[i].name] != undefined && !headers.includes(size[i].name)){
+                  headhtml += '<th>'+size[i].name+'</th>';
+                  headers.push(size[i].name);
+                }
+              }
+            }
+            headhtml += '<th>Total</th>'
+            headhtml += '</tr>';
+            $('.material-table thead').html(headhtml);
+
+            var bodyhtml = '';
+            for(var i = 0; i < list.length; i++){
+              bodyhtml += '<tr>';
+              bodyhtml += '<td>'+list[i].style+'</td>';
+              bodyhtml += '<td>'+list[i].po+'</td>';
+              bodyhtml += '<td>'+(list[i].materialtype==1?'Product Material': 'Finish Material')+'</td>';
+              for(var j = 0; j < submaterial.length; j++){
+                if(submaterial[j].id == list[i].material)
+                  bodyhtml += '<td>'+submaterial[j].name+'</td>';
+              }
+              
+              var sum = 0;
+              for(var j = 0; j < headers.length; j++){
+                if(list[i][headers[j]]){
+                  bodyhtml += '<td>'+list[i][headers[j]]+'</td>';
+                  sum += list[i][headers[j]];
+                }else{
+                  bodyhtml += '<td>0</td>';
+                }
+              }
+              bodyhtml += '<td>'+sum+'</td>';
+              bodyhtml += '</tr>';
+            }
+
+            $('.material-table tbody').html(bodyhtml);
+            
+            $('.material-table').DataTable({
+              "pageLength": 100,
+              responsive: true,
+              dom: '<"html5buttons"B>lTfgtip',
+              buttons: ['copy', 'csv', 'excel', 'pdf', 'print']
+            });
+          }else{
+            alert('Cannot search.');
+          }
+        }
+      })
+    })
