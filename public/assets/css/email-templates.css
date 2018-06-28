@@ -142,15 +142,15 @@ p, ul, ol {
     LINKS & BUTTONS
 ------------------------------------- */
 a {
-    color: #009688;
+    color: RGB(255, 153, 0);
     text-decoration: underline;
 }
 
 .btn-primary {
     text-decoration: none;
     color: #FFF;
-    background-color: #009688;
-    border: solid #009688;
+    background-color: RGB(255, 153, 0);
+    border: solid RGB(255, 153, 0);
     border-width: 10px 20px;
     /* line-height: 2em; */
     line-height: 20px;
@@ -213,15 +213,15 @@ a {
     }
 
     .alert.alert-warning {
-        background-color: #009688;
+        background-color: RGB(255, 153, 0);
     }
 
     .alert.alert-bad {
-        background-color: #009688;
+        background-color: RGB(255, 153, 0);
     }
 
     .alert.alert-good {
-        background-color: #009688;
+        background-color: RGB(255, 153, 0);
     }
 
 /* -------------------------------------

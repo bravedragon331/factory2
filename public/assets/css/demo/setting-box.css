@@ -1,6 +1,6 @@
 .setting-box {
   background: #fff;
-  border: 1px solid #009688;
+  border: 1px solid RGB(255, 153, 0);
   color: #666;
   font-size: 13px;
   width: 215px;
@@ -16,11 +16,11 @@
     right: 0; }
   .setting-box .open-close-ear {
     position: absolute;
-    background: #009688;
+    background: RGB(255, 153, 0);
     height: 34px;
     width: 34px;
     text-align: center;
-    border: 1px solid #009688;
+    border: 1px solid RGB(255, 153, 0);
     left: -34px;
     top: -1px;
     cursor: pointer;
@@ -38,7 +38,7 @@
   .setting-box .label {
     color: #fff;
     padding: 10px 0;
-    background: #009688;
+    background: RGB(255, 153, 0);
     font-size: 13px;
     font-weight: 600;
     text-align: center;
@@ -87,7 +87,7 @@
           .setting-box .theme-choose-list-container ul li div.blue {
             background-color: #2992A7; }
           .setting-box .theme-choose-list-container ul li div.default {
-            background-color: #009688; }
+            background-color: RGB(255, 153, 0); }
           .setting-box .theme-choose-list-container ul li div.purple {
             background-color: #a7296a; }
           .setting-box .theme-choose-list-container ul li div.warning {
