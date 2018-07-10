@@ -546,7 +546,8 @@ exports.stock_search = function(req, res){
     }
   }
   const filterByColor = (list, color)=>{
-    if(color != 'Not Selected'){
+    console.log(list, color);
+    if(color != -1){
       return new Promise((resolve, reject)=>{
         var list1 = list.inlist.filter(v =>{ return v.color == color; });
         var list2 = list.outlist.filter(v => {return v.color == color; });
@@ -574,7 +575,7 @@ exports.stock_search = function(req, res){
   const filterByLote = (list, lote) => {
     if(lote != ''){
       return new Promise((resolve, reject)=>{
-        var list1 = list.inlist.filter(v =>{ return (v.lote == lote) || (v.rack == lote); });
+        var list1 = list.inlist.filter(v =>{ return (v.lote.lastIndexOf(lote) != -1) || (v.rack.lastIndexOf(lote) != -1); });
         var list2 = list.outlist;
         resolve({inlist: list1, outlist: list2});
       })
@@ -640,9 +641,9 @@ exports.stock_search = function(req, res){
     for(var i = 0; i < list.inlist.length; i++){
       for(var j = 0; j < ret.length; j++){
         if(list.inlist[i].color == ret[j].color && list.inlist[i].fabric == ret[j].fabric && list.inlist[i].fabrictype == ret[j].fabrictype){
-          ret[j].kg += list.inlist[i].kg;
-          ret[j].inyds += list.inlist[i].yds;
-          ret[j].inroll += list.inlist[i].roll;
+          ret[j].kg = Number(ret[j].kg) + Number(list.inlist[i].kg);
+          ret[j].inyds = Number(ret[j].inyds) + Number(list.inlist[i].yds);
+          ret[j].inroll = Number(ret[j].inroll) + Number(list.inlist[i].roll);
           break;
         }
       }
@@ -655,9 +656,9 @@ exports.stock_search = function(req, res){
     for(var i = 0; i < list.outlist.length; i++){
       for(var j = 0; j < ret.length; j++){
         if(list.outlist[i].color == ret[j].color && list.outlist[i].fabric == ret[j].fabric && list.outlist[i].fabrictype == ret[j].fabrictype){
-          ret[j].kg -= list.outlist[i].kg;
-          ret[j].outyds += list.outlist[i].yds;
-          ret[j].outroll += list.outlist[i].roll;
+          ret[j].kg = Number(ret[j].kg) - Number(list.outlist[i].kg);
+          ret[j].outyds = Number(ret[j].outyds) + Number(list.outlist[i].yds);
+          ret[j].outroll += Number(ret[j].outroll) + Number(list.outlist[i].roll);
           break;
         }
       }
