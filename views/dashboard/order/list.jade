@@ -304,7 +304,8 @@ block script
       $('tbody>tr').off();
       $('tbody>tr').on('click', function(){
         let ordername = $($(this).find('td')[2]).html();
-        let buyer = $($(this).find('td')[3]).html();
+        let buyer = $($(this).find('td')[3]).html().replace(/&amp;/g, '&');
+        console.log(buyer);
         
         var method = 'POST';
         var form = document.createElement("form");
