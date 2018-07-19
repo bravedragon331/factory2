@@ -35,30 +35,30 @@ block content
         .panel-body
           form.form-horizontal.search-form
             .form-group.has-feedback
-              //- .col-md-2
-              //-   label #{__('Buyer')}
-              //-   select.form-control.buyer(data-placeholder='Select buyer...', style='width: 100%;')
-              //-     option(value='-1') Not Selected
-              //-     - for (var i = 0; i < customers.length; i++){
-              //-         option(value='#{customers[i].id}') #{customers[i].name}
-              //-     - }
               .col-md-2
-                label #{__('Date')}
-                input.form-control.date(type='text')
-                span.glyphicon.glyphicon-calendar.form-control-feedback
+                label #{__('Buyer')}
+                select.form-control.buyer(data-placeholder='Select buyer...', style='width: 100%;')
+                  option(value='-1') Not Selected
+                  - for (var i = 0; i < customers.length; i++){
+                      option(value='#{customers[i].id}') #{customers[i].name}
+                  - }
+              //- .col-md-2
+              //-   label #{__('Date')}
+              //-   input.form-control.date(type='text')
+              //-   span.glyphicon.glyphicon-calendar.form-control-feedback
               .col-md-2
                 label #{__('Order')}
                 select.form-control.order(data-placeholder='Input color name or select...', style='width: 100%;')
                   option(value='-1') Not Selected
                   - for(var i = 0; i < orders.length; i++){
-                      option(value='#{orders[i].id}') #{orders[i].name}
+                      option(value='#{orders[i].name}') #{orders[i].name}
                   - }
               .col-md-2
                 label #{__('Color')}
                 select.form-control.color(data-placeholder='Input color name or select...', style='width: 100%;')
                   option(value='-1') Not Selected
                   - for(var i = 0; i < colors.length; i++){
-                      option(value='#{colors[i].code}') #{colors[i].name}
+                      option(value='#{colors[i].name}') #{colors[i].name}
                   - }
               .col-md-2
                 label #{__('Style')}
@@ -80,26 +80,20 @@ block content
                     th(rowspan='2' colspan='1').text-center #{__('PO')}
                     th(rowspan='2' colspan='1').text-center #{__('COLOR')}
                     th(rowspan='2' colspan='1').text-center #{__('SIZE')}
-                    th(rowspan='1' colspan='6').text-center.lightblue #{__('ORDER')} #{__('QTY')}
-                    th(rowspan='1' colspan='3').text-center.lightgreen #{__('CUTTING')}
-                    th(rowspan='1' colspan='3').text-center.lightgreen #{__('SEWING')}
-                    th(rowspan='1' colspan='3').text-center.lightyellow
+                    th(rowspan='2' colspan='1').text-center.lightyellow #{__('ORDER')} #{__('QTY')}
+                    th(rowspan='1' colspan='2').text-center.lightgreen #{__('CUTTING')}
+                    th(rowspan='1' colspan='2').text-center.lightgreen #{__('SEWING')}
+                    th(rowspan='1' colspan='5').text-center.lightyellow
                   tr
-                    th.text-center.date1.lightblue
-                    th.text-center.date2.lightblue
-                    th.text-center.date3.lightblue
-                    th.text-center.date4.lightblue
-                    th.text-center.date5.lightblue
-                    th.text-center.lightyellow #{__('TOTAL')}
-                    th.text-center.lightgreen #{__('TODAY')}
                     th.text-center.lightgreen #{__('TOTAL')}
                     th.text-center.lightgreen #{__('BALANCE')}
-                    th.text-center.lightgreen #{__('TODAY')}
                     th.text-center.lightgreen #{__('TOTAL')}
                     th.text-center.lightgreen #{__('BALANCE')}
                     th.text-center.lightyellow #{__('SEGUNDAS')}
                     th.text-center.lightyellow #{__('DEFECTOS')}
                     th.text-center.lightyellow F/S/C/PR
+                    th.text-center.lightyellow D/P
+                    th.text-center.lightyellow OPERATION
                 tbody.t-body
 block script  
   script(src='/assets/plugins/moment/moment.js')
@@ -165,13 +159,196 @@ block script
     $('.m-sew-status').addClass('active');
     $('.m-sew-report').addClass('active');
 
-    var cut, sew, all_data;
-    var sub_total = [], total = [], grand_total = [];
-    $(document).ready(function() {
-      $('.lds-spinner').fadeIn();
+    var list;
+    var total_order = 0, total_cut = 0, total_sew_primeras = 0, total_sew_seg = 0, total_sew_conf = 0, total_sew_p_day = 0, total_sew_operation = 0;
+    var grand_order = 0, grand_cut = 0, grand_sew_primeras = 0, grand_sew_seg = 0, grand_sew_conf = 0, grand_sew_p_day = 0, grand_sew_operation = 0;
+
+    var getOrderRowNum = function(ordername) {
+      var num = 0;
+      for(var i = 0; i < list.length; i++) {
+        if(list[i].ordername != ordername) continue;
+        for(var j = 1; j < 11; j++) {
+          if(list[i]['s_name'+j] != null) num++;
+        }
+        num++; // Sub total
+      }
+      return num;
+    }
+    var getOrderBuyer = function(ordername) {
+      for(var i = 0; i < list.length; i++) {
+        if(list[i].ordername == ordername) {
+          return list[i].buyername;
+        }
+      }
+    }
+    var getOrderStyle = function(ordername) {
+      for(var i = 0; i < list.length; i++) {
+        if(list[i].ordername == ordername) {
+          return list[i].style.replace(new RegExp(',', 'g'), '<br>');
+        }
+      }
+    }
+    var getOrderPO = function(ordername) {
+      var s = [];
+      for(var i = 0; i < list.length; i++) {
+        if(list[i].ordername == ordername) {
+          return list[i].po.replace(new RegExp(',', 'g'), '<br>');
+        }
+      }
+    }
+    var td_gen = function(num) {
+      if(num && (num > 0)) {
+        return `<td class="text-right">${num}</td>`
+      } else if(num && (num < 0)) {
+        return `<td class="text-right" style="color: red !important;">${num}</td>`
+      } else {
+        return `<td></td>`;
+      }
+    }
+    var generateColorTemplate = function(d) {            
+      var num = 0, sub_order = 0, sub_cut = 0, sub_sew_primeras = 0, sub_sew_seg = 0, sub_sew_conf = 0, sub_sew_p_day = 0, sub_sew_operation = 0;
+      for(var i = 1; i < 11; i++) {
+        if(d['s_name'+i] != null) {
+          num ++;
+        }
+      }
+      var tmp = '';
+      var b_first = true;
+      for(var i = 1; i < 11; i++) {
+        if(d['s_name'+i] != null) {
+          if(b_first) {                  
+            tmp += 
+              `<td rowspan="${num}">${d['color']}</td>
+              <td>${d['s_name'+i]}</td>
+              ${td_gen(d['t'+i])}
+              ${td_gen(d['c_size'+i])}
+              ${td_gen(d['t'+i] - d['c_size'+i])}
+              ${td_gen(d['sew_primeras'+i])}
+              ${td_gen(d['t'+i] - d['sew_primeras'+i])}
+              ${td_gen(d['sew_seg'+i])}
+              ${td_gen(d['sew_conf'+i])}
+              ${td_gen(d['sew_p_day'+i])}
+              ${td_gen()}
+              ${td_gen(d['sew_operation'+i])}
+              </tr>`;
+              b_first = false;
+          } else {
+            tmp += 
+              `<tr><td>${d['s_name'+i]}</td>
+              ${td_gen(d['t'+i])}
+              ${td_gen(d['c_size'+i])}
+              ${td_gen(d['t'+i] - d['c_size'+i])}
+              ${td_gen(d['sew_primeras'+i])}
+              ${td_gen(d['t'+i] - d['sew_primeras'+i])}
+              ${td_gen(d['sew_seg'+i])}
+              ${td_gen(d['sew_conf'+i])}
+              ${td_gen(d['sew_p_day'+i])}
+              ${td_gen()}
+              ${td_gen(d['sew_operation'+i])}
+              </tr>`;                    
+          }
+          sub_order += d['t'+i]; sub_cut += d['c_size'+i]; sub_sew_primeras += d['sew_primeras'+i];
+          sub_sew_seg += d['sew_seg'+i]; sub_sew_conf += d['sew_conf'+i];
+          sub_sew_p_day += d['sub_p_day'+i]; sub_sew_operation += d['sew_operation'+i];
+          total_order += d['t'+i]; total_cut += d['c_size'+i]; total_sew_primeras += d['sew_primeras'+i];
+          total_sew_seg += d['sew_seg'+i]; total_sew_conf += d['sew_conf'+i];
+          total_sew_p_day += d['total_p_day'+i]; total_sew_operation += d['sew_operation'+i];
+          grand_order += d['t'+i]; grand_sew_primeras += d['sew_primeras'+i]; grand_sew_seg += d['sew_seg'+i]; grand_sew_conf += d['sew_conf'+i];
+          grand_sew_p_day += d['grand_p_day'+i]; grand_sew_operation += d['sew_operation'+i];
+        }
+      }
+
+      // Sub Total here.
+      tmp += 
+      `<tr style="background: lightyellow; font-weight: bold;">
+      <td colspan = "2">SUB TOTAL</td>
+      ${td_gen(sub_order)}
+      ${td_gen(sub_cut)}
+      ${td_gen(sub_order-sub_cut)}
+      ${td_gen(sub_sew_primeras)}
+      ${td_gen(sub_order-sub_sew_primeras)}
+      ${td_gen(sub_sew_seg)}
+      ${td_gen(sub_sew_conf)}
+      <td></td>
+      ${td_gen(sub_sew_p_day)}
+      ${td_gen(sub_sew_operation)}
+      </tr>`
+      return tmp;
+    }
+    var generateColorTemplate2 = function(d) {            
+      var num = 0, sub_order = 0, sub_cut = 0, sub_sew_primeras = 0, sub_sew_seg = 0, sub_sew_conf = 0, sub_sew_p_day = 0, sub_sew_operation = 0;
+      for(var i = 1; i < 11; i++) {
+        if(d['s_name'+i] != null) {
+          num ++;
+        }
+      }
+      var tmp = '';
+      var b_first = true;
+      for(var i = 1; i < 11; i++) {
+        if(d['s_name'+i] != null) {
+          if(b_first) {                  
+            tmp += 
+              `<tr><td rowspan="${num}">${d['color']}</td><td>${d['s_name'+i]}</td>
+              ${td_gen(d['t'+i])}
+              ${td_gen(d['c_size'+i])}
+              ${td_gen(d['t'+i] - d['c_size'+i])}
+              ${td_gen(d['sew_primeras'+i])}
+              ${td_gen(d['t'+i] - d['sew_primeras'+i])}
+              ${td_gen(d['sew_seg'+i])}
+              ${td_gen(d['sew_conf'+i])}
+              ${td_gen(d['sew_p_day'+i])}
+              ${td_gen()}
+              ${td_gen(d['sew_operation'+i])}
+              </tr>`;
+              b_first = false;
+          } else {
+            tmp += 
+              `<tr><td>${d['s_name'+i]}</td>
+              ${td_gen(d['t'+i])}
+              ${td_gen(d['c_size'+i])}
+              ${td_gen(d['t'+i] - d['c_size'+i])}
+              ${td_gen(d['sew_primeras'+i])}
+              ${td_gen(d['t'+i] - d['sew_primeras'+i])}
+              ${td_gen(d['sew_seg'+i])}
+              ${td_gen(d['sew_conf'+i])}
+              ${td_gen(d['sew_p_day'+i])}
+              ${td_gen()}
+              ${td_gen(d['sew_operation'+i])}
+              </tr>`;
+          }
+          sub_order += d['t'+i]; sub_cut += d['c_size'+i]; sub_sew_primeras += d['sew_primeras'+i];
+          sub_sew_seg += d['sew_seg'+i]; sub_sew_conf += d['sew_conf'+i];
+          sub_sew_p_day += d['sub_p_day'+i]; sub_sew_operation += d['sew_operation'+i];
+          total_order += d['t'+i]; total_cut += d['c_size'+i]; total_sew_primeras += d['sew_primeras'+i];
+          total_sew_seg += d['sew_seg'+i]; total_sew_conf += d['sew_conf'+i];
+          total_sew_p_day += d['total_p_day'+i]; total_sew_operation += d['sew_operation'+i];
+          grand_order += d['t'+i]; grand_sew_primeras += d['sew_primeras'+i]; grand_sew_seg += d['sew_seg'+i]; grand_sew_conf += d['sew_conf'+i];
+          grand_sew_p_day += d['grand_p_day'+i]; grand_sew_operation += d['sew_operation'+i];
+        }
+      }
+
+      // Sub Total here.
+      tmp += 
+      `<tr style="background: lightyellow; font-weight: bold;">
+      <td colspan = "2">SUB TOTAL</td>
+      ${td_gen(sub_order)}
+      ${td_gen(sub_cut)}
+      ${td_gen(sub_order-sub_cut)}
+      ${td_gen(sub_sew_primeras)}
+      ${td_gen(sub_order-sub_sew_primeras)}
+      ${td_gen(sub_sew_seg)}
+      ${td_gen(sub_sew_conf)}
+      <td></td>
+      ${td_gen(sub_sew_p_day)}
+      ${td_gen(sub_sew_operation)}
+      </tr>`
+      return tmp;
+    }
+
+    var search = function() {      
       // var curdate = $('.date').val();
       var today = new Date(new Date().getTime() + new Date().getTimezoneOffset()*60000);
-      const formatDate =  function(date) {
+      var formatDate =  function(date) {
         var d = new Date(date),
         month = '' + (d.getMonth() + 1),
         day = '' + d.getDate(),
@@ -182,451 +359,92 @@ block script
 
         return [year, month, day].join('-');
       }
+      if($('.buyer').val() == -1) {
+        alert('Please choose buyer.');
+        return;
+      }
+      $('.lds-spinner').fadeIn();
       $.ajax({
         url: "/dashboard/sew/report/list",
         type: 'POST',
         data: {
-          date: formatDate(today)
+          buyer: $('.buyer').val(),
+          order: $('.order').val(),
+          color: $('.color').val(),
+          style: $('.style').val()
         },
         success: function(res){
-          all_data = res;
-          sub_total = [], total = [], grand_total = [];
-          // console.log(res);
           $('.lds-spinner').fadeOut();
-          cut = res.cut;
-          sew = res.sew;
-          // Display Date
-          for(var i = 1 ; i <= res.dates.length; i++) {
-            $('.date'+i).html(res.dates[i-1].substring(5, 10));
-          }
-
-          //Display Order
-          var data = [];
-          for (var i = 0; i < res.order.length; i++) {
-            var b = true;
-            for(var j = 0; j < data.length; j++) {
-              if((data[j].order == res.order[i].order) && (data[j].style == res.order[i].style) && (data[j].color == res.order[i].color)) {
-                copyData(data[j], res.order[i]);
-                b = false;
-              }
-            }
-            if(b) {
-              data.push(res.order[i]);
+          list = res.list;
+          var ordernames = [];
+          for(var i = 0; i < list.length; i++) {
+            if(!ordernames.includes(list[i].ordername)) {
+              ordernames.push(list[i].ordername);
             }
           }
-    
-          // Display Data.
-          data.sort((a, b) => {
-            return Number(a.order) - Number(b.order);
-          })
-          
-          var ht = '', orders = [], styles = [], pos = [], colors = [];
-          var used = [];
-          grand_total = [];
-          for(var j = 0; j < 14; j++) {
-            grand_total[j] = 0;
-          }
-
-
-          for(var i = 0; i < data.length; i++) {
-            if(used[i] == true) continue;
-            
-            if((i == 0) || (i > 0 && (data[i].order != data[i-1].order))) {
-              used[i] = true;
-              //Display TOTAL
-              if(i != 0){
-                ht += '<tr style="background: lightyellow; font-weight: bold;"><td colspan="2">TOTAL</td><td/><td/><td/>';
-                for(var j = 0; j < 14; j++) {
-                  if(total[j] >= 0) {
-                    ht+='<td class="right-text">'+total[j]+'</td>'
-                  } else {
-                    ht+='<td class="right-text red">'+total[j]+'</td>'
-                  }                  
-                }
-                ht += '<td/></tr>';
-              }
-
-              total = [];
-              for(var j = 0; j < 14; j++) {
-                total[j] = 0;
-              }
-
-              // Get row count
-              var n = 0, colors = [], num_rows = 0;
-              while((data[i+n] != undefined) && (data[i+n].order == data[i].order)) {
-                if(!colors.includes(data[i+n].color)) {
-                  colors.push(data[i+n].color);
-                  for(var k = 1; k < 11; k++) {
-                    if(data[i+n]['sizes']['sizename'+k] != '-1') num_rows++;
-                  }
-                }
-                n++;
-              }
-              num_rows += colors.length;
-              n = num_rows;              
-              // Get all Styles
-              var styles = [];
-              for(var j = 0; j < data.length; j++) {
-                if((data[i].order == data[j].order) && (!styles.includes(data[j].style))) {
-                  styles.push(data[j].style);
-                }
-              }
-              // Get all POs
-              var pos = [];
-              for(var j = 0; j < data.length; j++) {
-                if((data[i].order == data[j].order) && (!pos.includes(data[j].po))) {
-                  pos.push(data[j].po);
-                }
-              }
+          var ht = '';
+          for(var i = 0; i < list.length; i++) {
+            if(i == 0) {
               ht += '<tr>';
-              ht += '<td rowspan="'+n+'">'+data[i].ordername+'<p class="mt-10">'+data[i].buyername+'</p></td>';
-              ht += '<td rowspan="'+n+'">'+styles.join().replace(/ *, */g, '<br>')+'</td>';
-              ht += '<td rowspan="'+n+'">'+pos.join().replace(/ *, */g, '<br>')+'</td>';
-              for(var j = 0; j < data.length; j++) {
-                if(i == j) continue;
-                if((data[j].order == data[i].order) && (data[j].color == data[i].color)) {
-                  copyData(data[i], data[j]);
-                  used[j] = true;
-                }                
-              }
-              ht += generateTemplate1(data[i]);              
-            } else {
+              var rownum = getOrderRowNum(list[i].ordername);              
+              ht += `<td rowspan="${rownum}">${list[i].ordername}<p class="mt-10">${getOrderBuyer(list[i].ordername)}</p></td>`;
+              ht += `<td rowspan="${rownum}">${getOrderStyle(list[i].ordername)}</td>`;
+              ht += `<td rowspan="${rownum}">${getOrderPO(list[i].ordername)}</td>`;
+              ht += generateColorTemplate(list[i]);
+            } else if(list[i].ordername != list[i-1].ordername) {
+              //- ht += generateTotalTemplate();
+              ht += 
+              `<tr style="background: lightyellow; font-weight: bold;">
+              <td colspan = "5">TOTAL</td>
+              ${td_gen(total_order)}
+              ${td_gen(total_cut)}
+              ${td_gen(total_order-total_cut)}
+              ${td_gen(total_sew_primeras)}
+              ${td_gen(total_order-total_sew_primeras)}
+              ${td_gen(total_sew_seg)}
+              ${td_gen(total_sew_conf)}
+              <td></td>
+              ${td_gen(total_sew_p_day)}
+              ${td_gen(total_sew_operation)}
+              </tr>`;
+              total_order = 0, total_cut = 0, total_sew_primeras = 0, total_sew_seg = 0, total_sew_conf = 0, total_sew_p_day = 0, total_sew_operation = 0;
+
               ht += '<tr>';
-              for(var j = 0; j < data.length; j++) {
-                if(i == j) continue;
-                if((data[j].order == data[i].order) && (data[j].color == data[i].color)) {
-                  copyData(data[i], data[j]);
-                  used[j] = true;
-                }                
-              }
-              ht += generateTemplate1(data[i]);
+              var rownum = getOrderRowNum(list[i].ordername);
+              ht += `<td rowspan="${rownum}">${list[i].ordername}<p class="mt-10">${getOrderBuyer(list[i].ordername)}</p></td>`;
+              ht += `<td rowspan="${rownum}">${getOrderStyle(list[i].ordername)}</td>`;
+              ht += `<td rowspan="${rownum}">${getOrderPO(list[i].ordername)}</td>`;
+              ht += generateColorTemplate(list[i]);
+            } else if(list[i].ordername == list[i-1].ordername) {
+              ht += generateColorTemplate2(list[i]);
             }
           }
-
-          ht += '<tr style="background: lightgreen; font-weight: bold;"><td colspan="2">GRAND TOTAL</td><td/><td/><td/>';
-          for(var j = 0; j < 14; j++) {
-            ht+='<td class="right-text">'+grand_total[j]+'</td>'
-          }
-          ht += '<td/></tr>';
-
+          //- ht += gernerateGrandTotalTemplate();
+          ht += 
+          `<tr style="background: lightgreen; font-weight: bold;">
+          <td colspan = "5">Grand TOTAL</td>
+          ${td_gen(grand_order)}
+          ${td_gen(grand_cut)}
+          ${td_gen(grand_order-grand_cut)}
+          ${td_gen(grand_sew_primeras)}
+          ${td_gen(grand_order-grand_sew_primeras)}
+          ${td_gen(grand_sew_seg)}
+          ${td_gen(grand_sew_conf)}
+          <td></td>
+          ${td_gen(grand_sew_p_day)}
+          ${td_gen(grand_sew_operation)}
+          </tr>`;
           $('.t-body').html(ht);
-
           jQuery(".main-table").clone(true).appendTo('#table-scroll .faux-table').addClass('clone');
           jQuery(".main-table.clone").clone(true).appendTo('#table-scroll .faux-table').addClass('clone2');
         }
       })
+    }
+    $(document).ready(function() {
+      //- search();
     })
 
     $('.search-form').submit(function(e) {
       e.preventDefault();
-      var today = new Date(new Date().getTime() + new Date().getTimezoneOffset()*60000);
-      const formatDate =  function(date) {
-        var d = new Date(date),
-        month = '' + (d.getMonth() + 1),
-        day = '' + d.getDate(),
-        year = d.getFullYear();
-
-        if (month.length < 2) month = '0' + month;
-        if (day.length < 2) day = '0' + day;
-
-        return [year, month, day].join('-');
-      }
-      $('.lds-spinner').fadeIn();
-      $.ajax({
-        url: "/dashboard/sew/report/list",
-        type: 'POST',
-        data: {
-          date: formatDate(today),
-          order: $('.order').val()
-        },
-        success: function(res){
-          all_data = res;
-          console.log(res);
-          var startdate = $('.date').val().split('-')[0];
-          var enddate = $('.date').val().split('-')[1];
-          //- res.order = res.order.filter(v => {
-          //-   return (new Date(v.date) <= new Date(enddate)) && (new Date(v.date) >= new Date(startdate));
-          //- })
-          //- console.log(res.order, $('.order').val());
-          //- if($('.order').val() != '-1') {        
-          //-   res.order = res.order.filter(v => {
-          //-     return v.order == Number($('.order').val());
-          //-   })
-          //- }
-          //- if($('.style').val() != '') {
-          //-   res.order = res.order.filter(v => {
-          //-     return v.style.indexOf($('.style').val()) !== -1;
-          //-   })
-          //- }
-          sub_total = [], total = [], grand_total = [];
-          // console.log(res);
-          $('.lds-spinner').fadeOut();
-          cut = res.cut;
-          sew = res.sew;
-          // Display Date
-          for(var i = 1 ; i <= res.dates.length; i++) {
-            $('.date'+i).html(res.dates[i-1].substring(5, 10));
-          }
-
-          //Display Order
-          var data = [];
-          for (var i = 0; i < res.order.length; i++) {
-            var b = true;
-            for(var j = 0; j < data.length; j++) {
-              if((data[j].order == res.order[i].order) && (data[j].style == res.order[i].style) && (data[j].color == res.order[i].color)) {
-                copyData(data[j], res.order[i]);
-                b = false;
-              }
-            }
-            if(b) {
-              data.push(res.order[i]);
-            }
-          }
-    
-          // Display Data.
-          data.sort((a, b) => {
-            return Number(a.order) - Number(b.order);
-          })
-          
-          var ht = '', orders = [], styles = [], pos = [], colors = [];
-          var used = [];
-          grand_total = [];
-          for(var j = 0; j < 14; j++) {
-            grand_total[j] = 0;
-          }
-
-
-          for(var i = 0; i < data.length; i++) {
-            if(used[i] == true) continue;
-            
-            if((i == 0) || (i > 0 && (data[i].order != data[i-1].order))) {
-              used[i] = true;
-              //Display TOTAL
-              if(i != 0){
-                ht += '<tr style="background: lightyellow; font-weight: bold;"><td colspan="2">TOTAL</td><td/><td/><td/>';
-                for(var j = 0; j < 14; j++) {
-                  if(total[j] >= 0) {
-                    ht+='<td class="right-text">'+total[j]+'</td>'
-                  } else {
-                    ht+='<td class="right-text red">'+total[j]+'</td>'
-                  }                  
-                }
-                ht += '<td/></tr>';
-              }
-
-              total = [];
-              for(var j = 0; j < 14; j++) {
-                total[j] = 0;
-              }
-
-              // Get row count
-              var n = 0, colors = [], num_rows = 0;
-              while((data[i+n] != undefined) && (data[i+n].order == data[i].order)) {
-                if(!colors.includes(data[i+n].color)) {
-                  colors.push(data[i+n].color);
-                  for(var k = 1; k < 11; k++) {
-                    if(data[i+n]['sizes']['sizename'+k] != '-1') num_rows++;
-                  }
-                }
-                n++;
-              }
-              num_rows += colors.length;
-              n = num_rows;              
-              // Get all Styles
-              var styles = [];
-              for(var j = 0; j < data.length; j++) {
-                if((data[i].order == data[j].order) && (!styles.includes(data[j].style))) {
-                  styles.push(data[j].style);
-                }
-              }
-              // Get all POs
-              var pos = [];
-              for(var j = 0; j < data.length; j++) {
-                if((data[i].order == data[j].order) && (!pos.includes(data[j].po))) {
-                  pos.push(data[j].po);
-                }
-              }
-              ht += '<tr>';
-              ht += '<td rowspan="'+n+'">'+data[i].ordername+'<p class="mt-10">'+data[i].buyername+'</p></td>';
-              ht += '<td rowspan="'+n+'">'+styles.join().replace(/ *, */g, '<br>')+'</td>';
-              ht += '<td rowspan="'+n+'">'+pos.join().replace(/ *, */g, '<br>')+'</td>';
-              for(var j = 0; j < data.length; j++) {
-                if(i == j) continue;
-                if((data[j].order == data[i].order) && (data[j].color == data[i].color)) {
-                  copyData(data[i], data[j]);
-                  used[j] = true;
-                }                
-              }
-              ht += generateTemplate1(data[i]);              
-            } else {
-              ht += '<tr>';
-              for(var j = 0; j < data.length; j++) {
-                if(i == j) continue;
-                if((data[j].order == data[i].order) && (data[j].color == data[i].color)) {
-                  copyData(data[i], data[j]);
-                  used[j] = true;
-                }                
-              }
-              ht += generateTemplate1(data[i]);
-            }
-          }
-
-          ht += '<tr style="background: lightgreen; font-weight: bold;"><td colspan="2">GRAND TOTAL</td><td/><td/><td/>';
-          for(var j = 0; j < 14; j++) {
-            ht+='<td class="right-text">'+grand_total[j]+'</td>'
-          }
-          ht += '<td/></tr>';
-
-          $('.t-body').html(ht);
-
-          jQuery(".main-table").clone(true).appendTo('#table-scroll .faux-table').addClass('clone');
-          jQuery(".main-table.clone").clone(true).appendTo('#table-scroll .faux-table').addClass('clone2');
-        }
-      })
-
+      search();
     })
-
-    var copyData = function(dest, data) {
-      for(var i = 0; i < all_data; i++) {
-        for(var j = 1; j < 10; j++) {
-          dest['date'+i]['size'+j] = (dest['date'+i]['size'+j]?dest['date'+i]['size'+j]:0) + (data['date'+i]['size'+j]?data['date'+i]['size'+j]:0);
-        }
-      }
-    }
-
-    var generateTemplate1 = function(data) {
-      sub_total = [];
-      for(var i = 0; i < 14; i++) {
-        sub_total[i] = 0;
-      }
-      var ht = '', n = 0;
-      for(var i = 1; i < 11; i++) {
-        if(data.sizes['sizename'+i] != '-1') n++;
-      }
-      ht += '<td rowspan="'+n+'">'+data.color+'</td>';
-      ht += '<td>'+data['sizes']['sizename1']+'</td>';
-      var sum = 0;
-      for(var i = 0; i < 5; i++) {
-        if(data['date'+i] == undefined) {
-          ht += '<td></td>';
-        } else if((data['date'+i]['size1'] != undefined) && (data['date'+i]['size1'] != 0)) {
-          ht += '<td class="right-text">'+data['date'+i]['size1']+'</td>';
-          sum += Number(data['date'+i]['size1']);
-          //SUB TOTAL
-          sub_total[i] += Number(data['date'+i]['size1']);
-          total[i] += Number(data['date'+i]['size1']);
-          grand_total[i] += Number(data['date'+i]['size1']);
-        } else {
-          ht += '<td></td>';
-        }
-      }
-      ht += '<td class="right-text">'+sum+'</td>';
-      sub_total[5] += sum;
-      total[5] += sum;
-      grand_total[5] += sum;
-      ht += generateCutTemplate(data.order, data.color, 1, sum);
-      ht += generateSewTemplate(data.order, data.color, data['sizes']['sizename1'], sum);
-      
-      // From 2nd Row
-      for(var j = 2; j < 11; j++) {
-        if(data['sizes']['sizename'+j] != '-1') {
-          ht += '<tr><td>'+data['sizes']['sizename'+j]+'</td>';
-          var sum = 0;
-          for(var i = 0; i < 5; i++) {
-            if(data['date'+i] == undefined) {
-              ht += '<td></td>';
-            } else if((data['date'+i]['size'+j] != undefined) && (data['date'+i]['size'+j] != 0)) {
-              ht += '<td class="right-text">'+data['date'+i]['size'+j]+'</td>';
-              sum += Number(data['date'+i]['size'+j]);
-              //SUB TOTAL
-              sub_total[i] += Number(data['date'+i]['size'+j]);
-              total[i] += Number(data['date'+i]['size'+j]);
-              grand_total[i] += Number(data['date'+i]['size'+j]);
-            } else {
-              ht += '<td></td>';
-            }
-          }
-          ht += '<td class="right-text">'+sum+'</td>';
-          sub_total[5] += sum;
-          total[5] += sum;
-          grand_total[5] += sum;
-          ht += generateCutTemplate(data.order, data.color, j, sum);
-          ht += generateSewTemplate(data.order, data.color, data['sizes']['sizename'+j], sum);
-        }
-      }
-
-      ht += '<tr style="background: lightyellow; font-weight: bold;"><td colspan="2">SUB TOTAL</td>';
-      for(var j = 0; j < 14; j++) {
-        if(sub_total[j] >= 0) {
-          ht+='<td class="right-text">'+sub_total[j]+'</td>'
-        } else {
-          ht+='<td class="right-text red">'+sub_total[j]+'</td>'
-        }        
-      }
-      ht += '<td/></tr>';
-      return ht;
-    }
-
-    var generateCutTemplate = function(order, colorname, size_number, sum) {
-      // console.log(order, colorname, size_number, sum);
-      var t_day = 0, t_all = 0, t_bal = 0;
-      for(var i = 0; i < cut.length; i++) {
-        if((cut[i].orderid == order) && (cut[i].colorname == colorname)) {                    
-          if(cut[i].cutdate == $('.date').val()) {
-            t_day += Number(cut[i]['size'+size_number]);
-            sub_total[6]+=t_day;
-            total[6]+=t_day;
-            grand_total[6]+=t_day;
-          }
-          t_all += Number(cut[i]['size'+size_number]);
-          sub_total[7]+=t_all;
-          total[7]+=t_all;
-          grand_total[7]+=t_all;
-        }
-      }
-      t_bal = t_all - sum;
-      sub_total[8]+=t_bal;
-      total[8]+=t_bal;
-      grand_total[8]+=t_bal;
-      if(t_bal > 0) {
-        return '<td class="right-text">'+(t_day!=0?t_day:'')+'</td><td class="right-text">'+(t_all!=0?t_all:'')+'</td><td class="right-text">'+(t_bal!=0?t_bal:'')+'</td>';
-      } else {
-        return '<td class="right-text">'+(t_day!=0?t_day:'')+'</td><td class="right-text">'+(t_all!=0?t_all:'')+'</td><td class="right-text red">'+(t_bal!=0?t_bal:'')+'</td>';
-      }      
-    }
-    var generateSewTemplate = function(order, colorname, sizename, sum) {
-      var t_day = 0, t_all = 0, t_bal = 0, t_seg = 0, t_def = 0;
-      for(var i = 0; i < sew.length; i++) {
-        if((sew[i].orderid == order) && (sew[i].colorname == colorname) && (sew[i].size == sizename)) {
-          if(sew[i].date == $('.date').val()) {
-            t_day += Number(sew[i].primeras);
-            sub_total[9]+=t_day;
-            total[9]+=t_day;
-            grand_total[9]+=t_day;
-          }
-          t_all += Number(sew[i].primeras);
-          sub_total[10]+=t_all;
-          total[10]+=t_all;
-          grand_total[10]+=t_all;
-          t_seg += Number(sew[i].seg);
-          sub_total[12]+=t_seg;
-          total[12]+=t_seg;
-          grand_total[12]+=t_seg;
-          t_def += Number(sew[i].conf);
-          sub_total[13]+=t_def;
-          total[14]+=t_def;
-          grand_total[14]+=t_def;
-        }
-      }
-      t_bal = t_all - sum;
-      sub_total[11]+=t_bal;
-      total[11]+=t_bal;
-      grand_total[11]+=t_bal;
-      if(t_bal > 0) {
-        return '<td class="right-text">'+(t_day!=0?t_day:'')+'</td><td class="right-text">'+(t_all!=0?t_all:'')+'</td><td class="right-text">'+
-             (t_bal!=0?t_bal:'')+'</td><td class="right-text">'+(t_seg!=0?t_seg:'')+'</td><td class="right-text">'+(t_def!=0?t_def:'')+'</td><td/></tr>';
-      } else {
-        return '<td class="right-text">'+(t_day!=0?t_day:'')+'</td><td class="right-text">'+(t_all!=0?t_all:'')+'</td><td class="right-text red">'+
-             (t_bal!=0?t_bal:'')+'</td><td class="right-text">'+(t_seg!=0?t_seg:'')+'</td><td class="right-text">'+(t_def!=0?t_def:'')+'</td><td/></tr>';
-      }      
-    }

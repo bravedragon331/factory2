@@ -280,6 +280,7 @@ exports.order_search = function(req, res){
     Order.getAll(function(err, res){
       if(err){
         res.json({isSuccess: false});
+        reject(err);
       }else{
         resolve(res);
       }
@@ -298,10 +299,11 @@ exports.order_search = function(req, res){
   }).then((result) => {
     console.log('finish');
     res.json({isSuccess: true, list: result});
-  });
+  })
 }
 
 exports.order_material = function(req, res){
+  console.log(req.body);
   var productmateriallist = [], finishmateriallist = [], material = [];
   Order.getOrder(req.body.name, req.body.buyer, function(err, result){
     if(err || result.length === 0){
@@ -408,6 +410,13 @@ exports.material_in = function(req, res){
     if(err){
       res.json({isSuccess: false});
     }else{
+      // Material Out to copy
+      req.body.quantity = 0;
+      req.body.customer = -1;
+      MaterialOut.addMaterial(req.body, function(err, result){
+      })
+      //
+
       res.json({isSuccess: result});
     }
   })
@@ -692,10 +701,17 @@ exports.stock_search = function(req, res){
       return new Promise((resolve, reject) => { resolve(list); })
     }
   }
+  const filterByOrder = (list, order) => {
+    if(order != '') {
+      return new Promise((resolve, reject) => {
+        resolve(list.filter(v => { return v.ordername == order; }))
+      })
+    } else {
+      return new Promise((resolve, reject) => { resolve(list); })
+    }
+  }
 
   var indata, outdata;
-
-  console.log(req.body);
 
   new Promise((resolve, reject)=>{
     MaterialIn.getAll(function(err, list){
@@ -705,18 +721,14 @@ exports.stock_search = function(req, res){
         resolve(list);
       }
     })
-  }).then((list)=>{
-    return filterByPO(list, req.body.po);
-  }).then(list=>{
-    return filterByStyle(list, req.body.style);
-  }).then(list=>{
-    return filterByColor(list, req.body.color);
   }).then(list=>{
     return filterByBuyer(list, req.body.buyer);
   }).then(list=>{
     return filterByMaterialType(list, req.body.material_type);
   }).then(list => {
     return filterByMaterial(list, req.body.material);
+  }).then(list => {
+    return filterByOrder(list, req.body.order);
   }).then(list=>{
     var b = [], ret = [];
     for(var i = 0; i < list.length; i++){
@@ -752,18 +764,14 @@ exports.stock_search = function(req, res){
         }
       })
     })
-  }).then((list)=>{
-    return filterByPO(list, req.body.po);
-  }).then(list=>{
-    return filterByStyle(list, req.body.style);
-  }).then(list=>{
-    return filterByColor(list, req.body.color);
   }).then(list=>{
     return filterByBuyer(list, req.body.buyer);
   }).then(list=>{
     return filterByMaterialType(list, req.body.material_type);
   }).then(list => {
     return filterByMaterial(list, req.body.material);
+  }).then(list => {
+    return filterByOrder(list, req.body.order);
   }).then(list=>{
     var b = [], ret = [];
     for(var i = 0; i < list.length; i++){
@@ -795,12 +803,13 @@ exports.stock_search = function(req, res){
       }
 
       if(ret[j][indata[i].size] != undefined){
-        ret[j][indata[i].size] += indata[i].sum;
-      }else{
-        ret[j][indata[i].size] = indata[i].sum;
+        ret[j][indata[i].size]['in'] += indata[i].sum;
+      } else{
+        ret[j][indata[i].size] = {};
+        ret[j][indata[i].size]['in'] = indata[i].sum;
+        ret[j][indata[i].size]['out'] = 0;
       }
     }
-
     for(i = 0; i < outdata.length; i++){
       for(j = 0; j < ret.length; j++){
         if(outdata[i].style == ret[j].style && outdata[i].po == ret[j].po && outdata[i].material == ret[j].material && outdata[i].materialtype == ret[j].materialtype)
@@ -812,9 +821,11 @@ exports.stock_search = function(req, res){
       }
 
       if(ret[j][outdata[i].size] != undefined){
-        ret[j][outdata[i].size] -= outdata[i].sum;
+        ret[j][outdata[i].size]['out'] += outdata[i].sum;
       }else{
-        ret[j][outdata[i].size] = -outdata[i].sum;
+        ret[j][outdata[i].size] = {};
+        ret[j][outdata[i].size]['out'] = outdata[i].sum;
+        ret[j][outdata[i].size]['in'] = 0;
       }
     }
     console.log(ret);
