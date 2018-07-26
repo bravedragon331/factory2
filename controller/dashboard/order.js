@@ -140,7 +140,6 @@ exports.new = function(req, res){
 exports.order_detail = function(req, res){
   let ordername = req.body.ordername;
   let buyer = req.body.buyer;
-  console.log(buyer);
   var order, fabriccode, yarncode, fabrictypecode, colorcode, prioritycode, sizegroup, sizecode, productgroup, finishgroup;
   new Promise((resolve, reject) =>{
     Order.getOrder(ordername, buyer, function(err, result){

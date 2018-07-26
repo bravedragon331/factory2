@@ -113,8 +113,8 @@ html(lang='en')
                   div
                     .large.sum 0
                     | &nbsp
-                    .small.balance1(style='color: blue !important;')
-                    .small.balance2(style='color: red !important;')
+                    .small.balance1(style='color: yellow !important;')
+                    //- .small.balance2(style='color: red !important;')
                 .col-md-3
                   .caption #{__('$.PROD.AMOUNT')}
                   div
@@ -176,7 +176,7 @@ html(lang='en')
                       th #{__('STYLE')}                  
                       th #{__('PO#')}
                       th #{__('COLOR')}
-                      th #{__('SIZE')}
+                      //- th #{__('SIZE')}
                       th.t-r #{__('QTY')}
                       th.t-r #{__('BALANCE')}
                       th.t-r %
@@ -544,11 +544,35 @@ html(lang='en')
                       datasets: [{
                           label: "Customer",
                           data: columns,
-                          backgroundColor: 'rgb(1, 192, 200)'
+                          backgroundColor: 'rgb(1, 192, 200)',
+                          
                       }]
                   },
                   options: {
-                      responsive: true
+                    responsive: true,
+                    legend: {
+                      labels: {
+                        fontColor: "#fff",
+                      }
+                    },
+                    scales: {
+                      yAxes: [{
+                        major: {
+                          color: 'rgba(255, 255, 255, 1)' // makes grid lines from y axis red
+                        },
+                        ticks: {
+                          fontColor: "#CCC", // this here
+                        },
+                      }],
+                      xAxes: [{
+                        major: {
+                          color: 'rgba(255, 255, 255, 1)' // makes grid lines from y axis red
+                        },
+                        ticks: {
+                          fontColor: "#CCC", // this here
+                        },
+                      }]
+                    }
                   }
               }
               if(chart_ship_year != null) {
@@ -716,7 +740,7 @@ html(lang='en')
                 } else {
                   ht += `<td class='t-r' style="color: #3388ff !important;">`+(Number(result.washout[i].total-result.washout[i].orderdetail_pcs))+`</td>`;
                 }
-                if((((result.washout[i].total-result.washout[i].orderdetail_pcs)/result.washout[i].orderdetail_pcs)*100).toFixed(2) < 100) {
+                if((((result.washout[i].total-result.washout[i].orderdetail_pcs)/result.washout[i].orderdetail_pcs)*100) < 100) {
                   ht += `<td class='t-r' style="color: rgb(246, 178, 37) !important;">`+(((result.washout[i].total-result.washout[i].orderdetail_pcs)/result.washout[i].orderdetail_pcs)*100).toFixed(2)+`</td>`;
                 } else {
                   ht += `<td class='t-r' style="color: #00ff3e !important;">`+(((result.washout[i].total-result.washout[i].orderdetail_pcs)/result.washout[i].orderdetail_pcs)*100).toFixed(2)+`</td>`;
@@ -730,18 +754,18 @@ html(lang='en')
                       <td>`+result.washreturn[i].order_name+`</td>
                       <td>`+result.washreturn[i].style+`</td>
                       <td>`+result.washreturn[i].color+`</td>
-                      <td style="color: rgb(246, 178, 37) !important;>`+result.washreturn[i].customer+`</td>
+                      <td style="color: rgb(246, 178, 37) !important;">`+result.washreturn[i].customer+`</td>
                       <td class='t-r'>`+result.washreturn[i].pcs+`</td>
                       <td class='t-r' style="color: #00ff3e !important;>`+(result.washout[i] == undefined ?  0: result.washout[i].total)+`</td>`;
-                if(Number(result.washout[i].total-result.washout[i].orderdetail_pcs) < 0) {
-                  ht += `<td class='t-r' style="color: red !important;">`+(Number(result.washout[i].total-result.washout[i].orderdetail_pcs))+`</td>`;
+                if(Number(result.washreturn[i].total-result.washreturn[i].orderdetail_pcs) < 0) {
+                  ht += `<td class='t-r' style="color: red !important;">`+(Number(result.washreturn[i].total-result.washreturn[i].orderdetail_pcs))+`</td>`;
                 } else {
-                  ht += `<td class='t-r' style="color: #3388ff !important;">`+(Number(result.washout[i].total-result.washout[i].orderdetail_pcs))+`</td>`;
+                  ht += `<td class='t-r' style="color: #3388ff !important;">`+(Number(result.washreturn[i].total-result.washreturn[i].orderdetail_pcs))+`</td>`;
                 }
-                if((((result.washout[i].total-result.washout[i].orderdetail_pcs)/result.washout[i].orderdetail_pcs)*100).toFixed(2) < 100) {
-                  ht += `<td class='t-r' style="color: rgb(246, 178, 37) !important;">`+(((result.washout[i].total-result.washout[i].orderdetail_pcs)/result.washout[i].orderdetail_pcs)*100).toFixed(2)+`</td>`;
+                if((((result.washreturn[i].total-result.washreturn[i].orderdetail_pcs)/result.washreturn[i].orderdetail_pcs)*100).toFixed(2) < 100) {
+                  ht += `<td class='t-r' style="color: rgb(246, 178, 37) !important;">`+(((result.washreturn[i].total-result.washreturn[i].orderdetail_pcs)/result.washreturn[i].orderdetail_pcs)*100).toFixed(2)+`</td>`;
                 } else {
-                  ht += `<td class='t-r' style="color: #00ff3e !important;">`+(((result.washout[i].total-result.washout[i].orderdetail_pcs)/result.washout[i].orderdetail_pcs)*100).toFixed(2)+`</td>`;
+                  ht += `<td class='t-r' style="color: #00ff3e !important;">`+(((result.washreturn[i].total-result.washreturn[i].orderdetail_pcs)/result.washreturn[i].orderdetail_pcs)*100).toFixed(2)+`</td>`;
                 }
                 ht += `</tr>`;
               }
@@ -990,33 +1014,31 @@ html(lang='en')
             if(result.isSuccess) {
               var ht = '';
               for(var i = 0; i < result.finish_data.length; i++) {
+                ht += `<tr>
+                  <td>`+result.finish_data[i].buyername+`</td>
+                  <td>`+result.finish_data[i].order_name+`</td>
+                  <td>`+result.finish_data[i].style+`</td>
+                  <td>`+result.finish_data[i].po+`</td>
+                  <td>`+result.finish_data[i].color+`</td>`;
+                var finish_qty = 0, finish_total = 0;
                 for(var j = 1; j < 11; j++) {
                   if(result.finish_data[i]['size'+j] != '0' && result.finish_data[i]['s'+j] != '-1') {
-                    ht += `<tr>
-                          <td>`+result.finish_data[i].buyername+`</td>
-                          <td>`+result.finish_data[i].order_name+`</td>
-                          <td>`+result.finish_data[i].style+`</td>
-                          <td>`+result.finish_data[i].po+`</td>
-                          <td>`+result.finish_data[i].color+`</td>`;
-                    for(var k = 0; k < result.sizes.length; k++) {
-                      if(result.sizes[k].id == result.finish_data[i]['s'+j]) {
-                        ht += `<td>`+result.sizes[k].name+`</td>`;
-                      }
-                    }
-                    ht += `<td class='t-r'>`+result.finish_data[i]['size'+j]+`</td>`;
-                    if(Number(result.finish_data[i]['size'+j])-Number(result.finish_data[i]['s'+j]) < 0) {
-                      ht += `<td class='t-r' style="color: red !important;">`+(Number(result.finish_data[i]['size'+j])-Number(result.finish_data[i]['s'+j]))+`</td>`;
-                    } else {
-                      ht += `<td class='t-r' style="color: #3388ff !important;">`+(Number(result.finish_data[i]['size'+j])-Number(result.finish_data[i]['s'+j]))+`</td>`;
-                    }
-                    if(Number((result.finish_data[i]['size'+j] - result.finish_data[i]['s'+j])/(result.finish_data[i]['s'+j])).toFixed(2)*100 < 100) {
-                      ht += `<td class='t-r' style="color: rgb(246, 178, 37) !important;">`+Number((result.finish_data[i]['size'+j] - result.finish_data[i]['s'+j])/(result.finish_data[i]['s'+j])).toFixed(2)*100+`</td>`;
-                    } else {
-                      ht += `<td class='t-r' style="color: #00ff3e !important;">`+Number((result.finish_data[i]['size'+j] - result.finish_data[i]['s'+j])/(result.finish_data[i]['s'+j])).toFixed(2)*100+`</td>`;
-                    }
+                    finish_qty += Number(result.finish_data[i]['size'+j]);
                   }
-                  ht += `</tr>`;
                 }
+                finish_total = result.finish_data[i].orderdetail_pcs;
+                ht += `<td class='t-r'>`+finish_qty+`</td>`;
+                if(Number(finish_qty)-Number(finish_total) < 0) {
+                  ht += `<td class='t-r' style="color: red !important;">`+(Number(finish_qty)-Number(finish_total))+`</td>`;
+                } else {
+                  ht += `<td class='t-r' style="color: #3388ff !important;">`+(Number(finish_qty)-Number(finish_total))+`</td>`;
+                }
+                if((Number(finish_qty) - Number(finish_total))/Number(finish_total)*100 < 100) {
+                  ht += `<td class='t-r' style="color: rgb(246, 178, 37) !important;">`+((Number(finish_qty) - Number(finish_total))/Number(finish_total)*100).toFixed(2)+`</td>`;
+                } else {
+                  ht += `<td class='t-r' style="color: #00ff3e !important;">`+((Number(finish_qty) - Number(finish_total))/Number(finish_total)*100).toFixed(2)+`</td>`;
+                }
+                ht += `</tr>`;
               }
               $('.finish-table tbody').html(ht);
             } else {
@@ -1039,8 +1061,8 @@ html(lang='en')
           },
           success: function(res){          
             if(res.isSuccess){
-              // console.log(res);
-              var data = JSON.parse(res.data);            
+              var data = JSON.parse(res.data);
+              console.log(data);
               var sum = 0;
               var meta = 0;
               var linename, max = 0;
@@ -1056,15 +1078,20 @@ html(lang='en')
               }
               $('.meta').html(meta);
               $('.sum').html(sum);
-              if(sum - meta > 0) {
-                $('.balance1').show();
-                $('.balance1').html(sum - meta);
-                $('.balance2').hide();
-              } else {
-                $('.balance2').show();
-                $('.balance2').html(sum - meta);
-                $('.balance1').hide();
+              //- if(sum - meta > 0) {
+              //-   $('.balance1').show();
+              //-   $('.balance1').html(sum - meta);
+              //-   $('.balance2').hide();
+              //- } else {
+              //-   $('.balance2').show();
+              //-   $('.balance2').html(sum - meta);
+              //-   $('.balance1').hide();
+              //- }
+              $('.balance1').show();
+              if(sum/meta) {
+                $('.balance1').html(Number(sum/meta*100).toFixed(0) + '%');
               }
+              $('.balance2').hide();
               $('.max').html('$ '+max);
               //- $('.line').html(linename);
             }
