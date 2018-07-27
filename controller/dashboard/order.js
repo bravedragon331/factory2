@@ -138,6 +138,7 @@ exports.new = function(req, res){
   res.render('dashboard/order/new', {role: res.role});
 }
 exports.order_detail = function(req, res){
+  console.log(req.body);
   let ordername = req.body.ordername;
   let buyer = req.body.buyer;
   var order, fabriccode, yarncode, fabrictypecode, colorcode, prioritycode, sizegroup, sizecode, productgroup, finishgroup;

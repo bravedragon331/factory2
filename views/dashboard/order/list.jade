@@ -303,8 +303,8 @@ block script
     var refreshEvent = function(){
       $('tbody>tr').off();
       $('tbody>tr').on('click', function(){
-        let ordername = encodeURIComponent($($(this).find('td')[2]).html());
-        let buyer = $($(this).find('td')[3]).html();
+        let ordername = $($(this).find('td')[2]).html();
+        let buyer = encodeURIComponent($($(this).find('td')[3]).html());
         
         var method = 'POST';
         var form = document.createElement("form");
